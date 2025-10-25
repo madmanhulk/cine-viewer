@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  cv-web-app:
+    image: ghcr.io/madmanhulk/cineviewer:latest
+    container_name: cineviewer-webapp
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount uploads directory for persistent storage
+      - uploads_data:/app/uploads
+      # Optional: Mount static files for development
+      - ./static:/app/static
+      - ./templates:/app/templates
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+volumes:
+  uploads_data:
+    driver: local
