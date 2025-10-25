@@ -1,79 +1,126 @@
 # Docker Deployment Guide
 
-## Quick Start
+## Prerequisites
 
-### Development
+1. Docker and Docker Compose installed
+2. GitHub account with Container Registry access
+3. GitHub Personal Access Token (PAT) with `read:packages` scope
+
+## Configuration
+
+### Environment Variables (.env)
+Create a `.env` file with the following variables:
+```env
+# Application Settings
+PORT=8080
+DOMAIN=your-domain.com
+
+# GitHub Container Registry Settings
+GITHUB_USERNAME=your-github-username
+TAG=latest
+
+# Environment
+FLASK_ENV=production
+FLASK_DEBUG=False
+```
+
+## Deployment Options
+
+### Development Deployment
 ```bash
-# Build and run the application
-docker-compose up --build
+# Pull and run the application
+docker-compose up -d
 
-# Run in detached mode
-docker-compose up -d --build
+# View logs
+docker-compose logs -f
 ```
 
 The application will be available at: **http://localhost:8080**
 
 ### Production Deployment
-
 ```bash
-docker-compose -f Docker_Compose.yaml -f docker-compose.prod.yml up -d --build
+# Deploy with production overrides
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-## Server Deployment
+## GitHub Container Registry Setup
 
-### Option 1: Build on Server
+1. **Login to GitHub Container Registry:**
 ```bash
-# Clone your repository on the server
-git clone <your-repo-url>
-cd CV-Web_App
-
-# Build and run
-docker-compose up -d --build
+# PowerShell
+$CR_PAT = "YOUR-PAT-TOKEN"
+echo $CR_PAT | docker login ghcr.io -u YOUR-GITHUB-USERNAME --password-stdin
 ```
 
-### Option 2: Pre-built Images (Recommended)
+2. **Pull the Image:**
+The image will be automatically pulled when running docker-compose commands.
 
-1. **Build and push to registry:**
+## Portainer Deployment
+
+1. **Add Registry Authentication:**
+   - In Portainer, go to Settings → Authentication
+   - Add registry credentials for ghcr.io
+   - Use your GitHub username and PAT token
+
+2. **Deploy Stack:**
+   - Upload both docker-compose.yml and docker-compose.prod.yml
+   - Configure environment variables in Portainer UI
+   - Deploy using the stack deployment feature
+
+## Volume Management
+
+### Development
+- `uploads_data`: Named volume for uploaded files
+- `./static:/app/static`: Local mount for static files
+- `./templates:/app/templates`: Local mount for templates
+
+### Production
+- Only uses `uploads_data` named volume
+- Development mounts are removed for security
+
+## Maintenance
+
+### View Container Status
 ```bash
-# Build the image
-docker build -t your-registry/cinematography-app:latest .
-
-# Push to registry (Docker Hub, AWS ECR, etc.)
-docker push your-registry/cinematography-app:latest
+docker-compose ps
 ```
 
-2. **Update Docker Compose to use pre-built image:**
-```yaml
-services:
-  cv-web-app:
-    image: your-registry/cinematography-app:latest
-    # Remove the build section
-```
-
-3. **Deploy on server:**
+### Update Container
 ```bash
-# Pull and run the pre-built image
+# Pull latest image
 docker-compose pull
+
+# Restart with new image
 docker-compose up -d
 ```
 
-## Configuration
+### Reset Everything
+```bash
+# Stop and remove containers, keeping volumes
+docker-compose down
 
-### Environment Variables
-- `FLASK_ENV`: Set to `production` for production deployment
-- `FLASK_DEBUG`: Set to `False` for production
+# Stop and remove everything including volumes
+docker-compose down -v
+```
 
-### Ports
-- **8080**: Flask application
+## Troubleshooting
 
-### Volumes
-- `./uploads:/app/uploads`: Persistent storage for uploaded images
-- `uploads_data`: Named volume for production deployments
+### Common Issues
 
-## Monitoring
+1. **Authentication Failed:**
+   - Verify GitHub PAT token has correct permissions
+   - Ensure you're logged in to ghcr.io
+   - Check Portainer registry credentials
 
-### Health Check
-The application includes a health check endpoint that Docker Compose will monitor.
+2. **Container Won't Start:**
+   - Check logs: `docker-compose logs cv-web-app`
+   - Verify port 8080 is not in use
+   - Ensure volumes have correct permissions
+
+3. **Cannot Find Image:**
+   - Verify image name and tag in compose file
+   - Check if repository is public or private
+   - Ensure proper authentication to ghcr.io
 
 ### Logs
 ```bash
@@ -82,27 +129,4 @@ docker-compose logs -f
 
 # View specific service logs
 docker-compose logs -f cv-web-app
-```
-
-## Scaling (Optional)
-
-```bash
-# Scale the Flask application
-docker-compose up --scale cv-web-app=3 -d
-```
-
-Note: You'll need a load balancer if scaling beyond 1 instance.
-
-## Troubleshooting
-
-### Common Issues
-1. **Port already in use**: Change the port mapping in Docker Compose
-2. **Permission issues**: Ensure uploads directory has proper permissions
-3. **Out of memory**: Increase Docker memory limits for image processing
-
-### Reset Everything
-```bash
-# Stop and remove all containers, networks, and volumes
-docker-compose down -v
-docker system prune -a
 ```

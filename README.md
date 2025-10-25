@@ -106,8 +106,7 @@ web_app/
 
 - **ARRI**: ARRI camera false color mapping
 - **Blackmagic**: Blackmagic camera false color mapping
-- **RED**: RED camera false color (placeholder)
-- **Sony**: Sony camera false color (placeholder)
+- More to come
 
 ## Browser Support
 
