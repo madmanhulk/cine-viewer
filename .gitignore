@@ -416,3 +416,18 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Docker
+*.tar
+.docker/
+docker-compose.override.yml
+
+# Application specific
+uploads/*
+!uploads/.gitkeep
+
+# Virtual Environment
+venv/
+.env
+.venv
+ENV/
