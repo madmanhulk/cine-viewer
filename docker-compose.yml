@@ -3,9 +3,6 @@ version: '3.8'
 services:
   cv-web-app:
     image: ghcr.io/madmanhulk/cine-viewer:latest
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
     container_name: cine-viewer-webapp
     ports:
       - "8080:8080"
