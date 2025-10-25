@@ -15,17 +15,19 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY . .
+COPY src/cineviewer /app/cineviewer
+COPY VERSION /app/VERSION
 
 # Create uploads directory
-RUN mkdir -p uploads
+RUN mkdir -p /app/uploads
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=app.py
+ENV FLASK_APP=cineviewer.app
+ENV PYTHONPATH=/app
 
 # Expose port
 EXPOSE 8080
 
 # Run the application
-CMD ["python", "app.py"]
+CMD ["python", "-m", "cineviewer.app"]
