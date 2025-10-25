@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   cv-web-app:
-    image: ghcr.io/madmanhulk/cineviewer:latest
-    container_name: cineviewer-webapp
+    image: ghcr.io/madmanhulk/cine-viewer:latest
+    container_name: cine-viewer-webapp
     ports:
       - "8080:8080"
     volumes:
