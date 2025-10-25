@@ -39,8 +39,8 @@ The application will be available at: **http://localhost:8080**
 
 ### Production Deployment
 ```bash
-# Deploy with production overrides
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Deploy the application
+docker-compose up -d
 ```
 
 ## GitHub Container Registry Setup
@@ -63,7 +63,7 @@ The image will be automatically pulled when running docker-compose commands.
    - Use your GitHub username and PAT token
 
 2. **Deploy Stack:**
-   - Upload both docker-compose.yml and docker-compose.prod.yml
+   - Upload docker-compose.yml to Portainer
    - Configure environment variables in Portainer UI
    - Deploy using the stack deployment feature
 
