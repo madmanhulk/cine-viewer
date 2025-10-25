@@ -36,10 +36,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Extract version from app.py
+      - name: Get version from VERSION file
         id: get_version
         run: |
-          VERSION=$(grep -Po "__version__ = \"\K[^\"]+" app.py)
+          VERSION=$(cat VERSION)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
