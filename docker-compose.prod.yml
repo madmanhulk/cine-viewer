@@ -11,7 +11,7 @@ services:
     volumes:
       # Remove development mounts for production
       - uploads_data:/app/uploads
-    restart: unless-stopped
+    restart: always
 
 volumes:
   uploads_data:
