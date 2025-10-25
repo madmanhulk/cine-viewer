@@ -39,7 +39,7 @@ jobs:
       - name: Get version from VERSION file
         id: get_version
         run: |
-          VERSION=$(cat VERSION)
+          VERSION=$(cat src/cineviewer/VERSION)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
