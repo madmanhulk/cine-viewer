@@ -6,7 +6,9 @@ import io
 import base64
 import os
 
-__version__ = "0.21"
+# Read version from VERSION file
+with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as f:
+    __version__ = f.read().strip()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
@@ -135,7 +137,7 @@ def image_to_base64(image_array):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', version=__version__)
 
 @app.route('/api/version')
 def get_version():
