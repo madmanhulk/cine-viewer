@@ -453,13 +453,24 @@ function drawLegend() {
     });
 }
 
+let lastRequestTime = 0;
+const THROTTLE_MS = 50; // Throttle to max 20 requests per second
+
 async function handleMouseMove(event) {
     if (!appState.originalImage || !appState.imageData || !appState.showVectorscope) return;
+
+    // Throttle requests
+    const now = Date.now();
+    if (now - lastRequestTime < THROTTLE_MS) return;
+    lastRequestTime = now;
 
     // Get mouse position relative to canvas
     const rect = imageCanvas.getBoundingClientRect();
     const x = Math.floor((event.clientX - rect.left) * (imageCanvas.width / rect.width));
     const y = Math.floor((event.clientY - rect.top) * (imageCanvas.height / rect.height));
+    
+    // Check if coordinates are within bounds
+    if (x < 0 || x >= imageCanvas.width || y < 0 || y >= imageCanvas.height) return;
 
     try {
         const response = await fetch('/api/pixel-color', {
@@ -469,8 +480,13 @@ async function handleMouseMove(event) {
                 image: appState.imageData,
                 x: x,
                 y: y
-            })
+            }),
+            credentials: 'same-origin'  // Include cookies if any
         });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const data = await response.json();
         if (data.success) {
@@ -480,9 +496,13 @@ async function handleMouseMove(event) {
                 color: data.color
             };
             drawVectorscope();
+        } else {
+            console.error('API Error:', data.error);
         }
     } catch (error) {
         console.error('Pixel color error:', error);
+        // Clear highlight on error
+        appState.highlightedPoint = null;
     }
 }
 

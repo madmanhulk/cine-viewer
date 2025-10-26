@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import numpy as np
 from PIL import Image
@@ -16,6 +17,7 @@ with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as f:
     __version__ = f.read().strip()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
+CORS(app)  # Enable CORS for all routes
 app.config['MAX_CONTENT_LENGTH'] = 35 * 1024 * 1024  # 35MB max upload
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -238,12 +240,20 @@ def upload_image():
 @app.route('/api/pixel-color', methods=['POST'])
 def pixel_color():
     try:
+        logger.info(f"Received pixel-color request from {request.remote_addr}")
         data = request.get_json()
+        if not data:
+            logger.error("No JSON data received in request")
+            return jsonify({'error': 'No JSON data received'}), 400
+            
         image_base64 = data.get('image')
         x = data.get('x')
         y = data.get('y')
         
+        logger.info(f"Processing pixel at coordinates: ({x}, {y})")
+        
         if not image_base64 or x is None or y is None:
+            logger.error(f"Missing data - image: {bool(image_base64)}, x: {x}, y: {y}")
             return jsonify({'error': 'Missing required data'}), 400
             
         # Decode image
