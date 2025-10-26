@@ -28,5 +28,5 @@ ENV PYTHONPATH=/app
 # Expose port
 EXPOSE 8080
 
-# Run the application
-CMD ["python", "-m", "cineviewer.app"]
+# Run the application with Waitress
+CMD ["python", "-m", "waitress", "--host=0.0.0.0", "--port=8080", "--threads=6", "cineviewer.app:app"]

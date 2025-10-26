@@ -13,7 +13,7 @@ services:
       - ./static:/app/static
       - ./templates:/app/templates
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
     restart: always
 
