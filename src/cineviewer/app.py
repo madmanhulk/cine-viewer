@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import numpy as np
+import psutil
+import gc
 from PIL import Image
 import io
 import base64
@@ -29,6 +31,11 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+# System constants
+MEMORY_THRESHOLD_MB = 1000  # 1GB warning threshold
+MAX_SESSION_TIME = 3600     # 1 hour maximum session time
+CLEANUP_INTERVAL = 300      # Clean up every 5 minutes
 
 # Client tracking
 clients = defaultdict(lambda: {"last_seen": 0})
@@ -116,36 +123,56 @@ def apply_false_color(image_array, fc_type="ARRI"):
 
 def compute_vectorscope(image_array):
     """Compute vectorscope data from image."""
-    if len(image_array.shape) == 3 and image_array.shape[2] == 4:
-        image_array = image_array[:,:,:3]
+    r = None
+    g = None
+    b = None
+    u = None
+    v = None
+    flat_u = None
+    flat_v = None
     
-    height, width = image_array.shape[:2]
-    r = image_array[:,:,0].astype(float) / 255.0
-    g = image_array[:,:,1].astype(float) / 255.0
-    b = image_array[:,:,2].astype(float) / 255.0
-    
-    # Convert to UV (chrominance)
-    Y = 0.299 * r + 0.587 * g + 0.114 * b
-    u = 0.492 * (b - Y)
-    v = 0.877 * (r - Y)
-    
-    # Clip to valid range
-    u = np.clip(u, -0.5, 0.5)
-    v = np.clip(v, -0.5, 0.5)
-    
-    # Sample points (downsample for performance)
-    flat_u = u.flatten()
-    flat_v = v.flatten()
-    step = max(1, len(flat_u) // 2000)
-    
-    points = []
-    for i in range(0, len(flat_u), step):
-        points.append({
-            'u': float(flat_u[i]),
-            'v': float(flat_v[i])
-        })
-    
-    return points
+    try:
+        if len(image_array.shape) == 3 and image_array.shape[2] == 4:
+            image_array = image_array[:,:,:3]
+        
+        height, width = image_array.shape[:2]
+        r = image_array[:,:,0].astype(float) / 255.0
+        g = image_array[:,:,1].astype(float) / 255.0
+        b = image_array[:,:,2].astype(float) / 255.0
+        
+        # Convert to UV (chrominance)
+        Y = 0.299 * r + 0.587 * g + 0.114 * b
+        u = 0.492 * (b - Y)
+        v = 0.877 * (r - Y)
+        
+        # Clip to valid range
+        u = np.clip(u, -0.5, 0.5)
+        v = np.clip(v, -0.5, 0.5)
+        
+        # Sample points (downsample for performance)
+        flat_u = u.flatten()
+        flat_v = v.flatten()
+        step = max(1, len(flat_u) // 2000)
+        
+        points = []
+        for i in range(0, len(flat_u), step):
+            points.append({
+                'u': float(flat_u[i]),
+                'v': float(flat_v[i])
+            })
+        
+        return points
+        
+    except Exception as e:
+        logger.error(f"Error in compute_vectorscope: {str(e)}")
+        raise
+        
+    finally:
+        # Clean up large arrays
+        for arr in [r, g, b, u, v, flat_u, flat_v]:
+            if arr is not None:
+                del arr
+        gc.collect()
 
 def image_to_base64(image_array):
     """Convert numpy array to base64 PNG."""
@@ -155,28 +182,69 @@ def image_to_base64(image_array):
     return base64.b64encode(buffered.getvalue()).decode()
 
 def cleanup_clients():
-    """Remove clients that haven't been seen in the last 10 seconds"""
+    """Remove inactive clients and clean up their resources"""
     while True:
-        time.sleep(5)  # Check every 5 seconds
+        time.sleep(CLEANUP_INTERVAL)
         current_time = time.time()
         active_count = 0
+        cleaned_count = 0
         
+        # Check current memory usage
+        try:
+            memory_usage = psutil.Process().memory_info().rss / 1024 / 1024  # MB
+            if memory_usage > MEMORY_THRESHOLD_MB:
+                logger.warning(f"High memory usage detected: {memory_usage:.1f}MB")
+            memory_before = memory_usage
+        except Exception as e:
+            logger.error(f"Error checking memory usage: {str(e)}")
+            memory_before = 0
+
         with client_lock:
-            # Remove clients not seen in the last 10 seconds
+            # Remove inactive clients or those exceeding max session time
             for client_ip, data in list(clients.items()):
-                if current_time - data["last_seen"] > 10:
+                session_age = current_time - data["last_seen"]
+                if session_age > MAX_SESSION_TIME:
+                    logger.info(f"Client {client_ip} exceeded max session time ({MAX_SESSION_TIME}s)")
+                    cleaned_count += 1
                     del clients[client_ip]
+                elif session_age > 10:  # Short timeout for truly inactive clients
+                    # Clear any stored data for this client
+                    if "image_data" in data:
+                        data["image_data"] = None
+                    if "vectorscope_points" in data:
+                        data["vectorscope_points"] = None
+                    del clients[client_ip]
+                    cleaned_count += 1
                 else:
                     active_count += 1
+
+        # Force garbage collection
+        import gc
+        gc.collect()
+        
+        try:
+            if memory_before > 0:
+                memory_after = psutil.Process().memory_info().rss / 1024 / 1024  # MB
+                if cleaned_count > 0:
+                    logger.info(f"Memory usage: {memory_before:.1f}MB -> {memory_after:.1f}MB (freed: {max(0, memory_before - memory_after):.1f}MB)")
+        except ImportError:
+            pass
             
-            logger.info(f"Active clients: {active_count}")
+        logger.info(f"Active clients: {active_count}, Cleaned sessions: {cleaned_count}")
 
 @app.before_request
 def track_client():
-    """Track client connection"""
+    """Track client connection and initialize client data structure"""
     client_ip = request.remote_addr
     with client_lock:
-        clients[client_ip]["last_seen"] = time.time()
+        if client_ip not in clients:
+            clients[client_ip] = {
+                "last_seen": time.time(),
+                "image_data": None,
+                "vectorscope_points": None
+            }
+        else:
+            clients[client_ip]["last_seen"] = time.time()
 
 @app.route('/')
 def index():
@@ -197,8 +265,9 @@ def upload_image():
     
     if not allowed_file(file.filename):
         return jsonify({'error': 'File type not allowed'}), 400
-    
+        
     try:
+        # Process image
         img = Image.open(file.stream)
         img_array = np.array(img)
         
@@ -220,6 +289,17 @@ def upload_image():
         height, width = img_array.shape[:2]
         aspect_ratio = width / height
         
+        # Convert image to base64
+        image_data = image_to_base64(img_array)
+
+        # Store data for this client
+        client_ip = request.remote_addr
+        with client_lock:
+            clients[client_ip]["image_data"] = image_data
+            clients[client_ip]["vectorscope_points"] = vectorscope_points
+            
+        logger.info(f"Stored image data for client {client_ip}")
+        
         return jsonify({
             'success': True,
             'width': width,
@@ -231,10 +311,11 @@ def upload_image():
                 'b': hist_b
             },
             'vectorscope': vectorscope_points,
-            'image_data': image_to_base64(img_array)
+            'image_data': image_data
         })
-    
+        
     except Exception as e:
+        logger.error(f"Error processing upload: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/pixel-color', methods=['POST'])
