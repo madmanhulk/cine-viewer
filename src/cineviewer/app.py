@@ -5,6 +5,11 @@ from PIL import Image
 import io
 import base64
 import os
+import time
+import logging
+import threading
+from datetime import datetime
+from collections import defaultdict
 
 # Read version from VERSION file
 with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as f:
@@ -14,6 +19,18 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
+
+# Client tracking
+clients = defaultdict(lambda: {"last_seen": 0})
+client_lock = threading.Lock()
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff'}
 
@@ -135,6 +152,30 @@ def image_to_base64(image_array):
     img.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode()
 
+def cleanup_clients():
+    """Remove clients that haven't been seen in the last 10 seconds"""
+    while True:
+        time.sleep(5)  # Check every 5 seconds
+        current_time = time.time()
+        active_count = 0
+        
+        with client_lock:
+            # Remove clients not seen in the last 10 seconds
+            for client_ip, data in list(clients.items()):
+                if current_time - data["last_seen"] > 10:
+                    del clients[client_ip]
+                else:
+                    active_count += 1
+            
+            logger.info(f"Active clients: {active_count}")
+
+@app.before_request
+def track_client():
+    """Track client connection"""
+    client_ip = request.remote_addr
+    with client_lock:
+        clients[client_ip]["last_seen"] = time.time()
+
 @app.route('/')
 def index():
     return render_template('index.html', version=__version__)
@@ -221,4 +262,8 @@ def false_color():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    # Start the cleanup thread
+    cleanup_thread = threading.Thread(target=cleanup_clients, daemon=True)
+    cleanup_thread.start()
+    
     app.run(debug=True, host='0.0.0.0', port=8080)
