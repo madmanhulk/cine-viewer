@@ -235,6 +235,54 @@ def upload_image():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/pixel-color', methods=['POST'])
+def pixel_color():
+    try:
+        data = request.get_json()
+        image_base64 = data.get('image')
+        x = data.get('x')
+        y = data.get('y')
+        
+        if not image_base64 or x is None or y is None:
+            return jsonify({'error': 'Missing required data'}), 400
+            
+        # Decode image
+        image_data = base64.b64decode(image_base64)
+        img = Image.open(io.BytesIO(image_data))
+        img_array = np.array(img)
+        
+        # Convert to RGB if necessary
+        if len(img_array.shape) == 2:  # Grayscale
+            img_array = np.stack([img_array]*3, axis=-1)
+        elif img_array.shape[2] == 4:  # RGBA
+            img_array = img_array[:,:,:3]
+            
+        # Get pixel color and convert to UV
+        r = float(img_array[y, x, 0]) / 255.0
+        g = float(img_array[y, x, 1]) / 255.0
+        b = float(img_array[y, x, 2]) / 255.0
+        
+        # Convert to UV (chrominance)
+        Y = 0.299 * r + 0.587 * g + 0.114 * b
+        u = 0.492 * (b - Y)
+        v = 0.877 * (r - Y)
+        
+        return jsonify({
+            'success': True,
+            'color': {
+                'r': int(r * 255),
+                'g': int(g * 255),
+                'b': int(b * 255)
+            },
+            'vectorscope': {
+                'u': float(u),
+                'v': float(v)
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/false-color', methods=['POST'])
 def false_color():
     try:

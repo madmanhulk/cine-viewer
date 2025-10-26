@@ -11,7 +11,8 @@ const appState = {
     falseColorType: 'ARRI',
     showVectorscope: false,
     vectorscopePoints: [],
-    histogram: { r: [], g: [], b: [] }
+    histogram: { r: [], g: [], b: [] },
+    highlightedPoint: null // Store the currently highlighted vectorscope point
 };
 
 // Canvas Elements
@@ -53,6 +54,15 @@ centerBtn.addEventListener('click', toggleCenter);
 thirdsBtn.addEventListener('click', toggleThirds);
 falsecolorBtn.addEventListener('click', toggleFalseColor);
 vectorscopeBtn.addEventListener('click', toggleVectorscope);
+
+// Mouse tracking for vectorscope highlighting
+imageCanvas.addEventListener('mousemove', handleMouseMove);
+imageCanvas.addEventListener('mouseleave', () => {
+    appState.highlightedPoint = null;
+    if (appState.showVectorscope) {
+        drawVectorscope();
+    }
+});
 thirdsSlider.addEventListener('input', (e) => {
     appState.thirdsLineWidth = parseInt(e.target.value);
     document.getElementById('sliderValue').textContent = e.target.value;
@@ -443,6 +453,39 @@ function drawLegend() {
     });
 }
 
+async function handleMouseMove(event) {
+    if (!appState.originalImage || !appState.imageData || !appState.showVectorscope) return;
+
+    // Get mouse position relative to canvas
+    const rect = imageCanvas.getBoundingClientRect();
+    const x = Math.floor((event.clientX - rect.left) * (imageCanvas.width / rect.width));
+    const y = Math.floor((event.clientY - rect.top) * (imageCanvas.height / rect.height));
+
+    try {
+        const response = await fetch('/api/pixel-color', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                image: appState.imageData,
+                x: x,
+                y: y
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            appState.highlightedPoint = {
+                u: data.vectorscope.u,
+                v: data.vectorscope.v,
+                color: data.color
+            };
+            drawVectorscope();
+        }
+    } catch (error) {
+        console.error('Pixel color error:', error);
+    }
+}
+
 function drawVectorscope() {
     if (!vectorscopeCanvas || !appState.vectorscopePoints.length) return;
 
@@ -494,7 +537,7 @@ function drawVectorscope() {
     });
 
     // Draw trace points
-    vectorscopeCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    vectorscopeCtx.fillStyle = 'rgba(255, 255, 255, 0.3)';
     appState.vectorscopePoints.forEach(point => {
         const mag = Math.hypot(point.u, point.v);
         const theta = Math.atan2(point.v, point.u);
@@ -505,6 +548,30 @@ function drawVectorscope() {
             vectorscopeCtx.fillRect(px - 1, py - 1, 2, 2);
         }
     });
+
+    // Draw highlighted point if exists
+    if (appState.highlightedPoint) {
+        const point = appState.highlightedPoint;
+        const mag = Math.hypot(point.u, point.v);
+        const theta = Math.atan2(point.v, point.u);
+        const px = cx + mag * 500 * Math.cos(theta);
+        const py = cy - mag * 500 * Math.sin(theta);
+
+        if (px >= 0 && px < width && py >= 0 && py < height) {
+            // Draw a larger, colored point
+            vectorscopeCtx.fillStyle = `rgb(${point.color.r}, ${point.color.g}, ${point.color.b})`;
+            vectorscopeCtx.beginPath();
+            vectorscopeCtx.arc(px, py, 4, 0, Math.PI * 2);
+            vectorscopeCtx.fill();
+            
+            // Draw a white ring around it
+            vectorscopeCtx.strokeStyle = 'white';
+            vectorscopeCtx.lineWidth = 1;
+            vectorscopeCtx.beginPath();
+            vectorscopeCtx.arc(px, py, 5, 0, Math.PI * 2);
+            vectorscopeCtx.stroke();
+        }
+    }
 }
 
 // Initial draw
