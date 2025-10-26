@@ -16,7 +16,7 @@ with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as f:
     __version__ = f.read().strip()
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 35 * 1024 * 1024  # 35MB max upload
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -267,4 +267,12 @@ if __name__ == '__main__':
     cleanup_thread.start()
     
     from waitress import serve
-    serve(app, host='0.0.0.0', port=8080, threads=6)
+    serve(app, 
+          host='0.0.0.0', 
+          port=8080,
+          threads=6,
+          connection_limit=1000,  # Max concurrent connections
+          channel_timeout=300,    # 5 minutes max for large image processing
+          cleanup_interval=30,    # Cleanup every 30 seconds
+          max_request_body_size=35*1024*1024  # 35MB max upload limit
+    )
