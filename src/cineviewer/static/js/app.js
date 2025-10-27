@@ -50,6 +50,7 @@ const paletteContainer = document.getElementById('paletteContainer');
 // Image Info Elements
 const resolutionInfo = document.getElementById('resolutionInfo');
 const aspectRatioInfo = document.getElementById('aspectRatioInfo');
+const contrastRatioInfo = document.getElementById('contrastRatioInfo');
 
 // Event Listeners
 openImageBtn.addEventListener('click', () => fileInput.click());
@@ -210,6 +211,7 @@ function handleFileSelect(event) {
 
                     resolutionInfo.textContent = `${data.width}x${data.height}`;
                     aspectRatioInfo.textContent = `${data.aspect_ratio}:1`;
+                    contrastRatioInfo.textContent = data.contrast_ratio ? `${data.contrast_ratio}:1` : '-';
 
                     placeholder.style.display = 'none';
                     imageCanvas.classList.add('visible');

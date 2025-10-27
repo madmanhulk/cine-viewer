@@ -64,6 +64,38 @@ def compute_histogram(image_array):
     
     return hist_r.tolist(), hist_g.tolist(), hist_b.tolist()
 
+def compute_contrast_ratio(image_array):
+    """Compute contrast ratio of the image."""
+    try:
+        if len(image_array.shape) == 3 and image_array.shape[2] == 4:
+            image_array = image_array[:,:,:3]
+        
+        # Calculate luminance for each pixel
+        r = image_array[:,:,0].astype(float) / 255.0
+        g = image_array[:,:,1].astype(float) / 255.0
+        b = image_array[:,:,2].astype(float) / 255.0
+        
+        # Relative luminance (Rec. 709)
+        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        
+        # Get percentile values to avoid outliers (use 99th and 1st percentile)
+        max_luminance = np.percentile(luminance, 99)
+        min_luminance = np.percentile(luminance, 1)
+        
+        # Ensure we don't divide by zero
+        if min_luminance < 0.001:
+            min_luminance = 0.001
+        
+        # Calculate contrast ratio
+        # Add 0.05 to both values (as per WCAG formula for relative luminance)
+        contrast_ratio = (max_luminance + 0.05) / (min_luminance + 0.05)
+        
+        return round(contrast_ratio)
+        
+    except Exception as e:
+        logger.error(f"Error in compute_contrast_ratio: {str(e)}")
+        return None
+
 def apply_false_color(image_array, fc_type="ARRI"):
     """Apply false color grading to image."""
     if len(image_array.shape) == 3 and image_array.shape[2] == 4:
@@ -398,6 +430,9 @@ def upload_image():
         # Extract color palette
         palette = extract_color_palette(img_array, n_colors=8)
         
+        # Compute contrast ratio
+        contrast_ratio = compute_contrast_ratio(img_array)
+        
         # Get image info
         height, width = img_array.shape[:2]
         aspect_ratio = width / height
@@ -418,6 +453,7 @@ def upload_image():
             'width': width,
             'height': height,
             'aspect_ratio': f"{aspect_ratio:.2f}" if not aspect_ratio.is_integer() else f"{int(aspect_ratio)}",
+            'contrast_ratio': contrast_ratio,
             'histogram': {
                 'r': hist_r,
                 'g': hist_g,
