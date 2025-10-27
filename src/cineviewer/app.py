@@ -13,6 +13,7 @@ import logging
 import threading
 from datetime import datetime
 from collections import defaultdict
+from sklearn.cluster import KMeans
 
 # Read version from VERSION file
 with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as f:
@@ -174,6 +175,49 @@ def compute_vectorscope(image_array):
                 del arr
         gc.collect()
 
+def extract_color_palette(image_array, n_colors=8):
+    """Extract dominant colors from image using k-means clustering."""
+    try:
+        if len(image_array.shape) == 3 and image_array.shape[2] == 4:
+            image_array = image_array[:,:,:3]
+        
+        # Reshape image to be a list of pixels
+        pixels = image_array.reshape(-1, 3)
+        
+        # Sample pixels for performance (use max 10000 pixels)
+        if len(pixels) > 10000:
+            indices = np.random.choice(len(pixels), 10000, replace=False)
+            pixels = pixels[indices]
+        
+        # Perform k-means clustering
+        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=10)
+        kmeans.fit(pixels)
+        
+        # Get the colors
+        colors = kmeans.cluster_centers_.astype(int)
+        
+        # Sort colors by frequency (labels count)
+        labels = kmeans.labels_
+        label_counts = np.bincount(labels)
+        sorted_indices = np.argsort(-label_counts)  # Sort by descending frequency
+        
+        palette = []
+        for idx in sorted_indices:
+            color = colors[idx]
+            palette.append({
+                'r': int(color[0]),
+                'g': int(color[1]),
+                'b': int(color[2]),
+                'hex': '#{:02x}{:02x}{:02x}'.format(int(color[0]), int(color[1]), int(color[2]))
+            })
+        
+        return palette
+        
+    except Exception as e:
+        logger.error(f"Error in extract_color_palette: {str(e)}")
+        # Return default palette on error
+        return []
+
 def image_to_base64(image_array):
     """Convert numpy array to base64 PNG."""
     img = Image.fromarray(image_array.astype('uint8'), 'RGB')
@@ -285,6 +329,9 @@ def upload_image():
         # Compute vectorscope
         vectorscope_points = compute_vectorscope(img_array)
         
+        # Extract color palette
+        palette = extract_color_palette(img_array, n_colors=8)
+        
         # Get image info
         height, width = img_array.shape[:2]
         aspect_ratio = width / height
@@ -311,6 +358,7 @@ def upload_image():
                 'b': hist_b
             },
             'vectorscope': vectorscope_points,
+            'palette': palette,
             'image_data': image_data
         })
         

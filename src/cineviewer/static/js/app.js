@@ -12,7 +12,9 @@ const appState = {
     showVectorscope: false,
     vectorscopePoints: [],
     histogram: { r: [], g: [], b: [] },
-    highlightedPoint: null // Store the currently highlighted vectorscope point
+    highlightedPoint: null, // Store the currently highlighted vectorscope point
+    showPalette: false,
+    paletteColors: []
 };
 
 // Canvas Elements
@@ -42,6 +44,8 @@ const falsecolorControls = document.getElementById('falsecolorControls');
 const vectorscopeBtn = document.getElementById('vectorscopeBtn');
 const vectorscopeContainer = document.getElementById('vectorscopeContainer');
 const legendContainer = document.getElementById('legendContainer');
+const paletteBtn = document.getElementById('paletteBtn');
+const paletteContainer = document.getElementById('paletteContainer');
 
 // Image Info Elements
 const resolutionInfo = document.getElementById('resolutionInfo');
@@ -54,6 +58,7 @@ centerBtn.addEventListener('click', toggleCenter);
 thirdsBtn.addEventListener('click', toggleThirds);
 falsecolorBtn.addEventListener('click', toggleFalseColor);
 vectorscopeBtn.addEventListener('click', toggleVectorscope);
+paletteBtn.addEventListener('click', togglePalette);
 
 // Mouse tracking for vectorscope highlighting - DISABLED
 // imageCanvas.addEventListener('mousemove', handleMouseMove);
@@ -162,6 +167,17 @@ function toggleVectorscope() {
     window.requestAnimationFrame(() => drawImage());
 }
 
+function togglePalette() {
+    appState.showPalette = !appState.showPalette;
+    paletteBtn.classList.toggle('active', appState.showPalette);
+    paletteContainer.style.display = appState.showPalette ? 'flex' : 'none';
+    if (appState.showPalette && appState.paletteColors.length > 0) {
+        displayPalette();
+    }
+    // Ensure image re-fits when the left panel changes width
+    window.requestAnimationFrame(() => drawImage());
+}
+
 function handleFileSelect(event) {
     const files = event.target.files;
     if (files.length === 0) return;
@@ -190,6 +206,7 @@ function handleFileSelect(event) {
                     appState.imageData = data.image_data;
                     appState.histogram = data.histogram;
                     appState.vectorscopePoints = data.vectorscope;
+                    appState.paletteColors = data.palette || [];
 
                     resolutionInfo.textContent = `${data.width}x${data.height}`;
                     aspectRatioInfo.textContent = `${data.aspect_ratio}:1`;
@@ -203,6 +220,10 @@ function handleFileSelect(event) {
                     
                     if (appState.showVectorscope) {
                         drawVectorscope();
+                    }
+                    
+                    if (appState.showPalette) {
+                        displayPalette();
                     }
                 } else {
                     alert('Error processing image: ' + data.error);
@@ -456,6 +477,31 @@ function drawLegend() {
 let lastRequestTime = 0;
 const THROTTLE_MS = 50; // Throttle to max 20 requests per second
 
+function displayPalette() {
+    if (!appState.paletteColors || appState.paletteColors.length === 0) return;
+    
+    const swatches = document.querySelectorAll('.palette-swatch');
+    appState.paletteColors.forEach((color, index) => {
+        if (index < swatches.length) {
+            const swatch = swatches[index];
+            swatch.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+            swatch.setAttribute('data-hex', color.hex);
+            
+            // Add click to copy hex value
+            swatch.onclick = () => {
+                navigator.clipboard.writeText(color.hex).then(() => {
+                    // Visual feedback
+                    const originalBorder = swatch.style.borderColor;
+                    swatch.style.borderColor = '#4CAF50';
+                    setTimeout(() => {
+                        swatch.style.borderColor = originalBorder || '#3a3a3a';
+                    }, 300);
+                });
+            };
+        }
+    });
+}
+
 async function handleMouseMove(event) {
     if (!appState.originalImage || !appState.imageData || !appState.showVectorscope) return;
 
@@ -609,4 +655,5 @@ if (window.ResizeObserver) {
     if (wrapperEl) ro.observe(wrapperEl);
     if (histogramContainerEl) ro.observe(histogramContainerEl);
     if (legendContainer) ro.observe(legendContainer);
+    if (paletteContainer) ro.observe(paletteContainer);
 }
