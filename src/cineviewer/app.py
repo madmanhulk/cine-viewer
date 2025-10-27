@@ -176,7 +176,7 @@ def compute_vectorscope(image_array):
         gc.collect()
 
 def extract_color_palette(image_array, n_colors=8):
-    """Extract dominant colors from image using k-means clustering."""
+    """Extract dominant colors from image using k-means clustering with improved diversity."""
     try:
         if len(image_array.shape) == 3 and image_array.shape[2] == 4:
             image_array = image_array[:,:,:3]
@@ -184,26 +184,92 @@ def extract_color_palette(image_array, n_colors=8):
         # Reshape image to be a list of pixels
         pixels = image_array.reshape(-1, 3)
         
-        # Sample pixels for performance (use max 10000 pixels)
-        if len(pixels) > 10000:
-            indices = np.random.choice(len(pixels), 10000, replace=False)
-            pixels = pixels[indices]
+        # Sample pixels for performance but bias towards more saturated colors
+        if len(pixels) > 50000:
+            # Calculate saturation for each pixel
+            r = pixels[:, 0].astype(float)
+            g = pixels[:, 1].astype(float)
+            b = pixels[:, 2].astype(float)
+            
+            # Calculate saturation (simplified HSV saturation)
+            max_rgb = np.maximum.reduce([r, g, b])
+            min_rgb = np.minimum.reduce([r, g, b])
+            saturation = np.where(max_rgb > 0, (max_rgb - min_rgb) / max_rgb, 0)
+            
+            # Create weighted probability: favor saturated colors and random sampling
+            # This ensures we get both dominant AND vibrant colors
+            weights = saturation * 0.7 + 0.3  # 70% based on saturation, 30% uniform
+            weights = weights / weights.sum()
+            
+            # Sample with bias towards saturated colors
+            indices = np.random.choice(len(pixels), 50000, replace=False, p=weights)
+            sampled_pixels = pixels[indices]
+        else:
+            sampled_pixels = pixels
         
-        # Perform k-means clustering
-        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=10)
-        kmeans.fit(pixels)
+        # Perform k-means clustering in LAB color space for better perceptual grouping
+        # Convert RGB to LAB for better color distance perception
+        from sklearn.cluster import KMeans
         
-        # Get the colors
-        colors = kmeans.cluster_centers_.astype(int)
+        # Convert to float [0, 1]
+        rgb_normalized = sampled_pixels.astype(float) / 255.0
         
-        # Sort colors by frequency (labels count)
+        # Simple RGB to LAB conversion approximation
+        # For better results, we could use a full conversion, but this works well
+        # We'll use weighted RGB which works better than pure RGB for clustering
+        r = rgb_normalized[:, 0]
+        g = rgb_normalized[:, 1]
+        b = rgb_normalized[:, 2]
+        
+        # Create feature space with RGB + saturation + brightness for better clustering
+        max_rgb = np.maximum.reduce([r, g, b])
+        min_rgb = np.minimum.reduce([r, g, b])
+        saturation = np.where(max_rgb > 0, (max_rgb - min_rgb) / max_rgb, 0)
+        brightness = (r * 0.299 + g * 0.587 + b * 0.114)
+        
+        # Combine features: RGB + saturation + brightness
+        features = np.column_stack([r, g, b, saturation, brightness])
+        
+        # Perform k-means clustering with more iterations for stability
+        kmeans = KMeans(n_clusters=n_colors, random_state=42, n_init=20, max_iter=500)
+        kmeans.fit(features)
+        
+        # Get the RGB colors (first 3 columns of cluster centers)
+        colors = (kmeans.cluster_centers_[:, :3] * 255).astype(int)
+        
+        # Get cluster labels and counts
         labels = kmeans.labels_
         label_counts = np.bincount(labels)
-        sorted_indices = np.argsort(-label_counts)  # Sort by descending frequency
+        
+        # Calculate brightness and saturation for each color for sorting
+        color_data = []
+        for idx in range(n_colors):
+            color = colors[idx]
+            frequency = label_counts[idx]
+            
+            # Calculate brightness (perceived luminance)
+            r, g, b = color
+            brightness = (r * 0.299 + g * 0.587 + b * 0.114)
+            
+            # Calculate saturation
+            max_val = max(r, g, b)
+            min_val = min(r, g, b)
+            sat = (max_val - min_val) / max_val if max_val > 0 else 0
+            
+            color_data.append({
+                'index': idx,
+                'color': color,
+                'brightness': brightness,
+                'saturation': sat,
+                'frequency': frequency
+            })
+        
+        # Sort by brightness (descending) - brighter colors first (top of stack)
+        sorted_colors = sorted(color_data, key=lambda x: x['brightness'], reverse=True)
         
         palette = []
-        for idx in sorted_indices:
-            color = colors[idx]
+        for data in sorted_colors:
+            color = data['color']
             palette.append({
                 'r': int(color[0]),
                 'g': int(color[1]),
