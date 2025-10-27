@@ -1,58 +1,178 @@
 # Changelog
 
-All notable changes to Cine Viewer Web Edition will be documented in this file.
+All notable changes to Cine Viewer will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.4] - 2025-10-27
+
+### Added
+- **Contrast Ratio Calculation**: Added Rec. 709 standard luminance-based contrast ratio measurement
+  - Displays as whole number ratio (e.g., "255:1")
+  - Uses 99th/1st percentile to avoid outlier pixels
+  - Applied WCAG formula for accurate perceptual contrast
+- **UI Spacing Improvements**: Enhanced sidebar spacing between control groups
+  - Added visual separation between "Open Image" and overlay controls
+  - Added separation between "Thirds Grid" and "False Color"
+  - Improved visual hierarchy without adding divider lines
+
+### Fixed
+- Contrast ratio now rounds to nearest whole number (no decimals)
+
+### Documentation
+- Updated README with all v1.1 features and improvements
+- Comprehensive Docker Deployment guide overhaul
+- Added automated update scheduling documentation for Portainer
+
+## [1.1.0] - 2025-10-27
+
+### Added
+- **Color Palette Extraction**: AI-powered 8-color dominant color extraction
+  - K-means clustering with enhanced feature space (RGB + saturation + brightness)
+  - Saturation-weighted sampling (70% saturation bias, 30% uniform)
+  - Analyzes 50,000 pixels for accurate representation
+  - Brightness-ordered display (lightest to darkest)
+  - Click-to-copy hex codes with visual feedback
+  - Hover to display hex values overlaid on swatches
+  - Vertical layout positioned left of image viewer
+  - Smart "interest score" ranking balancing frequency and vibrancy
+
+### Changed
+- Upgraded color extraction algorithm for better diversity
+  - Increased sampling from 10,000 to 50,000 pixels
+  - Enhanced k-means iterations (n_init=20, max_iter=500)
+  - Improved perceptual color grouping
+- UI refinements for equal padding throughout layout
+- Removed padding inconsistencies in image container
+
+### Technical
+- Added scikit-learn dependency for machine learning-based clustering
+- Implemented saturation calculation for pixel weighting
+- Optimized memory usage during color extraction
+
+## [1.0.0] - 2025-10-27
+
+### Changed
+- **Vectorscope Highlighting**: Temporarily disabled mouse hover highlighting feature
+  - Feature remains in codebase for future re-enablement
+  - Improves performance and simplifies feature set
+  - `/api/pixel-color` endpoint preserved but unused
+
+### Milestone
+- Official 1.0 release with stable core features
+- Production-ready false color modes (ARRI, Blackmagic)
+- Reliable vectorscope and histogram analysis
+- Professional-grade overlay tools
+
+## [0.29.0] - 2025-10-26
+
+### Added
+- Vectorscope pixel highlighting on mouse hover
+- Real-time pixel color tracking with UV coordinates
+- Enhanced vectorscope visualization with highlighted points
+
+### Technical
+- Added `/api/pixel-color` endpoint for real-time color analysis
+- Implemented throttled mouse tracking (50ms throttle)
+- Client-side coordinate mapping for canvas precision
 
 ## [0.21.0] - 2025-10-24
 
 ### Added
-- Initial Docker support with Docker Compose configuration
-- Complete containerized deployment setup
-- Production-ready Docker configuration with health checks
-- Version tracking system with API endpoint `/api/version`
-- Comprehensive deployment documentation
+- **Docker Support**: Complete containerized deployment
+  - Docker Compose configuration
+  - Production-ready setup with health checks
+  - GitHub Container Registry integration
+  - Waitress WSGI server for production
+- **Version Tracking**: API endpoint `/api/version` for version queries
+- **Deployment Documentation**: Comprehensive Docker and Portainer guides
 
-### Features
-- Image upload and drag & drop support (PNG, JPG/JPEG, BMP, TIFF; up to 50MB)
-- False Color grading: ARRI and Blackmagic profiles with legend
-- Thirds Grid with adjustable line thickness
-- Center Cross overlays (standard, small, square styles)
-- Real-time RGB Histogram display
-- Interactive Vectorscope visualization
-- Image metadata display (resolution and aspect ratio)
-- Dark theme UI optimized for cinematography work
+### Features (Initial Release)
+- Image upload with drag & drop support
+  - Supported formats: PNG, JPG/JPEG, BMP, TIFF
+  - Maximum file size: 35MB
+- **False Color Grading**:
+  - ARRI profile (industry-standard exposure zones)
+  - Blackmagic profile (BMD camera mapping)
+  - Interactive legend with zone descriptions
+- **Overlay Tools**:
+  - Thirds Grid with adjustable line thickness (1-5px)
+  - Center Cross with 3 styles (Standard, Small, Square)
+- **Analysis Tools**:
+  - Real-time RGB Histogram with reference lines
+  - Interactive Vectorscope with color reference markers
+  - Image metadata display (resolution, aspect ratio)
+- **UI/UX**:
+  - Dark theme optimized for cinematography
+  - Responsive canvas-based rendering
+  - Aspect ratio preservation
+  - Professional sidebar controls
 
 ### Technical
-- Flask backend with RESTful API
+- Flask backend with RESTful API architecture
+- NumPy-optimized image processing
 - Canvas-based frontend rendering
-- Optimized vectorscope sampling (~2000 points)
+- Vectorscope downsampling to ~2,000 points for performance
 - Server-side false color processing for accuracy
-- Responsive design with aspect ratio preservation
+- Client session management with automatic cleanup
+- Memory-efficient garbage collection
 - Cross-platform browser compatibility
 
-### Documentation
-- Complete setup and deployment guides
-- Docker deployment instructions
-- Architecture overview and project background
+### Infrastructure
+- Waitress WSGI production server
+- Connection limiting and timeout management
+- Automatic client cleanup (5-minute intervals)
+- Memory threshold monitoring (1GB warning)
+- Thread-based cleanup daemon
 
 ---
 
-## Version Format
+## Version History Summary
 
-- **Major.Minor.Patch** (e.g., 1.0.0)
-- **Major**: Breaking changes or significant new features
-- **Minor**: New features, backwards compatible
-- **Patch**: Bug fixes, minor improvements
+- **v1.1.x**: Color palette extraction, contrast ratio, UI enhancements
+- **v1.0.0**: Stable release, disabled vectorscope highlighting
+- **v0.29.x**: Vectorscope pixel tracking (experimental)
+- **v0.21.0**: Initial public release with Docker support
 
-## Release Process
+---
 
-1. Update version with `./version.sh [new_version]`
-2. Update this CHANGELOG.md
-3. Test changes thoroughly
-4. Commit changes: `git commit -m "Bump version to vX.X.X"`
-5. Create tag: `git tag -a vX.X.X -m "Release version X.X.X"`
-6. Push: `git push origin main --tags`
+## Planned Features
+
+### Future Enhancements
+- Additional false color profiles (RED, Sony)
+- LUT (Look-Up Table) application
+- Waveform monitor
+- RGB parade display
+- Batch image processing
+- Export analyzed images
+- Custom color palette management
+- EXIF metadata extraction
+- Zebra pattern overlay
+- Focus peaking visualization
+
+### Under Consideration
+- Re-enable vectorscope highlighting (performance optimized)
+- WebGL-accelerated rendering
+- Multi-image comparison mode
+- Annotation tools
+- Image sequence playback
+- HDR image support
+- RAW image format support
+
+---
+
+## Migration Notes
+
+### Upgrading to v1.1.x from v1.0.x
+- New dependency: `scikit-learn>=1.3.0` (auto-installed via requirements.txt)
+- No breaking changes to existing features
+- Color palette data added to `/api/upload` response
+- New UI element: palette container (hidden by default)
+
+### Upgrading to v1.0.0 from v0.x
+- Vectorscope highlighting disabled but code retained
+- No API changes
+- No data migration required
+
+---

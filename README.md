@@ -1,28 +1,57 @@
-# Cine Viewer - Web Edition
+# Cine Viewer
 
-A self-hosted web application for cinematography image analysis and false color grading.
+A professional web-based cinematography tool for image analysis, false color grading, and color palette extraction.
 
 ## Features
 
-- **Image Upload**: Upload and analyze images in your browser
-- **False Color Grading**: Multiple false color standards (ARRI, Blackmagic, RED, Sony)
-- **Center Cross**: Mark image center with configurable styles
-- **Thirds Grid**: Rule of thirds overlay with adjustable line thickness
-- **Histogram**: Real-time RGB histogram analysis
-- **Vectorscope**: Video measurement tool for color analysis
-- **Image Information**: Display resolution and aspect ratio
+### Image Analysis Tools
+- **Image Upload**: Upload and analyze images via browser (drag & drop supported)
+- **False Color Grading**: Industry-standard false color modes (ARRI, Blackmagic)
+- **Vectorscope**: Professional video measurement tool for color analysis with reference markers (R, G, B, Cy, Mg, Yl)
+- **Histogram**: Real-time RGB histogram with reference lines for exposure analysis
+- **Color Palette Extraction**: AI-powered extraction of 8 dominant colors using k-means clustering
+  - Saturation-weighted sampling for vibrant color capture
+  - Brightness-ordered display (lightest to darkest)
+  - Click-to-copy hex codes
+  - Hover to preview color values
+
+### Overlay Tools
+- **Center Cross**: Configurable center marker (Standard, Small, Square)
+- **Thirds Grid**: Rule of thirds overlay with adjustable line thickness (1-5px)
+
+### Image Information
+- **Resolution**: Width x Height in pixels
+- **Aspect Ratio**: Calculated ratio (e.g., 1.78:1)
+- **Contrast Ratio**: Dynamic range measurement using Rec. 709 luminance calculation
 
 ## Installation
 
-### Requirements
-- Python 3.8+
+### Docker Deployment (Recommended)
+
+```bash
+docker pull ghcr.io/madmanhulk/cine-viewer:latest
+docker run -d -p 8080:8080 --name cine-viewer ghcr.io/madmanhulk/cine-viewer:latest
+```
+
+Or use Docker Compose:
+```bash
+docker-compose up -d
+```
+
+See [DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md) for detailed deployment instructions.
+
+### Manual Installation
+
+#### Requirements
+- Python 3.9+
 - pip
 
-### Setup
+#### Setup
 
-1. Navigate to the web_app directory:
+1. Clone the repository:
 ```bash
-cd web_app
+git clone https://github.com/madmanhulk/cine-viewer.git
+cd cine-viewer
 ```
 
 2. Install dependencies:
@@ -32,109 +61,200 @@ pip install -r requirements.txt
 
 ## Running the App
 
-### Development Mode
+### Production (Recommended)
+
+The application uses Waitress WSGI server for production:
+
 ```bash
+cd src/cineviewer
 python app.py
 ```
 
-The application will be available at `http://localhost:8080`
+The app will be available at `http://localhost:8080`
 
-### Production Mode
+### Development
 
-For self-hosting in production, use a production WSGI server:
+For development with auto-reload:
 
 ```bash
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:8080 app:app
-```
-
-Or with Waitress (Windows compatible):
-```bash
-pip install waitress
-waitress-serve --port=8080 app:app
+cd src/cineviewer
+FLASK_ENV=development python app.py
 ```
 
 ## Usage
 
-1. **Open an image** by clicking "Open Image" or dragging an image into the viewer
-2. **Enable overlays**:
-   - Click "Center Cross" to show image center marker
-   - Click "Thirds Grid" to show rule of thirds overlay
-   - Click "False Color" to apply false color grading
-   - Click "Vectorscope" to display color vector analysis
-3. **Adjust settings**:
-   - Use sub-buttons to change center marker type or false color standard
-   - Adjust line thickness for thirds grid with the slider
-4. **View image information** in the sidebar (resolution, aspect ratio)
+### Basic Workflow
+
+1. **Open an Image**
+   - Click "Open Image" button
+   - Or drag and drop an image into the viewer
+   - Supported formats: PNG, JPG, JPEG, BMP, TIFF
+
+2. **Enable Analysis Tools**
+   - **Color Palette**: Extract and display 8 dominant colors
+   - **Vectorscope**: Show chrominance distribution
+   - **False Color**: Apply exposure analysis overlay
+   - **Center Cross**: Show precise center marker
+   - **Thirds Grid**: Composition guide overlay
+
+3. **View Image Data**
+   - Check resolution, aspect ratio, and contrast ratio in the sidebar
+   - Hover over palette colors to see hex values
+   - Click palette swatches to copy hex codes to clipboard
+
+### False Color Standards
+
+#### ARRI Mode
+- Purple (0-2.5%): Black clipping
+- Blue (2.5-4%): Just above black
+- Green (38-42%): 18% gray
+- Pink (52-56%): One stop over
+- Yellow (97-99%): Just below white
+- Red (99%+): White clipping
+
+#### Blackmagic Mode
+- Purple (0-5%): Black clipping
+- Blue (5-10%): Shadows
+- Green (40-45%): 18% gray
+- Yellow (90-95%): Highlights
+- Red (95%+): White clipping
 
 ## Architecture
 
-### Backend (Flask)
-- `app.py`: Main Flask application
+### Backend (Flask + Waitress)
+- `app.py`: Main Flask application with Waitress WSGI server
 - Image processing with NumPy and PIL
-- Endpoints for image upload and false color processing
-- Histogram and vectorscope computation
+- Machine learning color extraction with scikit-learn
+- RESTful API endpoints for image processing
+- Memory-efficient processing with garbage collection
+- Client session management with automatic cleanup
 
 ### Frontend (Vanilla JavaScript)
-- `templates/index.html`: Main HTML structure
-- `static/css/style.css`: Styling with dark theme
-- `static/js/app.js`: Application logic and canvas rendering
+- `templates/index.html`: Semantic HTML5 structure
+- `static/css/style.css`: Modern dark theme with responsive design
+- `static/js/app.js`: Canvas-based rendering and real-time analysis
 
-## File Structure
+### Color Palette Algorithm
+- K-means clustering in enhanced feature space (RGB + saturation + brightness)
+- Saturation-weighted sampling (70% saturation, 30% uniform)
+- Perceptual color grouping with 50,000 pixel samples
+- Interest score ranking balancing frequency and vibrancy
+- Brightness-based sorting for intuitive display
+
+## Project Structure
 
 ```
-web_app/
-├── app.py                 # Flask application
-├── requirements.txt       # Python dependencies
-├── templates/
-│   └── index.html        # Main HTML template
-└── static/
-    ├── css/
-    │   └── style.css     # Styling
-    └── js/
-        └── app.js        # Frontend application logic
+cine-viewer/
+├── docker/
+│   └── Dockerfile              # Container build configuration
+├── docs/
+│   ├── CHANGELOG.md            # Version history
+│   └── DOCKER_DEPLOYMENT.md    # Deployment guide
+├── scripts/
+│   ├── install_deps.py         # Dependency installer
+│   ├── run.sh                  # Launch script
+│   └── version.sh              # Version management
+├── src/
+│   └── cineviewer/
+│       ├── __init__.py
+│       ├── app.py              # Main application
+│       ├── VERSION             # Current version
+│       ├── static/
+│       │   ├── css/
+│       │   │   └── style.css   # Styling
+│       │   └── js/
+│       │       └── app.js      # Frontend logic
+│       ├── templates/
+│       │   └── index.html      # Main template
+│       └── uploads/            # Temporary upload storage
+├── docker-compose.yml          # Compose configuration
+├── requirements.txt            # Python dependencies
+└── README.md
 ```
 
-## Supported Image Formats
+## Dependencies
 
-- PNG
-- JPG/JPEG
-- BMP
-- TIFF
+### Core
+- Flask 3.0.0 - Web framework
+- NumPy ≥1.24.0 - Numerical computing
+- Pillow ≥10.0.0 - Image processing
+- scikit-learn ≥1.3.0 - Machine learning (color clustering)
 
-## False Color Standards
+### Production
+- Waitress ≥2.1.2 - Production WSGI server
+- gunicorn ≥21.2.0 - Alternative WSGI server
+- flask-cors ≥4.0.0 - CORS support
 
-- **ARRI**: ARRI camera false color mapping
-- **Blackmagic**: Blackmagic camera false color mapping
-- More to come
+### Utilities
+- psutil ≥5.9.0 - System monitoring
+- werkzeug ≥3.0.0 - WSGI utilities
+
+## Performance & Optimization
+
+- **Vectorscope**: Downsampled to 2,000 points for real-time performance
+- **Color Palette**: Intelligent sampling of 50,000 pixels with saturation weighting
+- **Memory Management**: Automatic cleanup of inactive sessions every 5 minutes
+- **Image Scaling**: Client-side canvas scaling maintains aspect ratio
+- **Garbage Collection**: Aggressive cleanup after processing operations
+- **Connection Limits**: Configurable concurrent connection management
 
 ## Browser Support
 
-Works in all modern browsers supporting:
-- Canvas API
-- Fetch API
-- FileReader API
-- Drag & Drop
+Requires modern browser with:
+- Canvas API (2D rendering context)
+- Fetch API (RESTful communication)
+- FileReader API (local file processing)
+- HTML5 Drag & Drop
+- ES6+ JavaScript support
+
+Tested on:
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
 
 ## Network Access
 
-By default, the Flask server binds to `0.0.0.0` on port 5000, making it accessible from any device on the network at:
+By default, the application binds to `0.0.0.0:8080`, accessible from any device on your network:
 ```
-http://<your-ip-address>:5000
+http://<your-ip-address>:8080
 ```
 
-To restrict access to localhost only, modify `app.py`:
+To restrict to localhost:
 ```python
-app.run(debug=True, host='127.0.0.1', port=5000)
+# In app.py
+serve(app, host='127.0.0.1', port=8080)
 ```
 
-## Performance Notes
+## Version History
 
-- Vectorscope downsamples to ~2000 points for performance
-- False color processing is done server-side
-- Histogram computation is optimized with NumPy
-- All images are scaled to fit container while maintaining aspect ratio
+See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
+
+**Current Version: 1.1**
+
+### Recent Updates (v1.1)
+- Added 8-color palette extraction with AI-powered color analysis
+- Implemented contrast ratio calculation (Rec. 709 standard)
+- Improved color diversity with saturation-weighted sampling
+- Added brightness-based palette sorting
+- Enhanced UI spacing and layout
+- Click-to-copy hex codes with visual feedback
+
+### Previous Release (v1.0)
+- Disabled vectorscope highlighting feature (kept in codebase)
+- Refined false color modes
+- Improved histogram visualization
+- Enhanced memory management
+
+## Contributing
+
+Contributions welcome! Please open issues or pull requests on GitHub.
 
 ## License
 
-Reid Petro
+© Reid Petro - [reidpetro.com](https://www.reidpetro.com)
+
+## Author
+
+**Reid Petro**  
+Cinematographer & Developer  
+[reidpetro.com](https://www.reidpetro.com)
