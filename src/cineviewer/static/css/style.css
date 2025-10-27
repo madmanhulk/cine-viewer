@@ -194,10 +194,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 15px;
     min-width: 0;
     overflow: hidden;
-    margin: 0 10px;
     height: 100%;
 }
 
