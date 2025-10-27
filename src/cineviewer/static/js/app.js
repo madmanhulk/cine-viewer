@@ -55,14 +55,14 @@ thirdsBtn.addEventListener('click', toggleThirds);
 falsecolorBtn.addEventListener('click', toggleFalseColor);
 vectorscopeBtn.addEventListener('click', toggleVectorscope);
 
-// Mouse tracking for vectorscope highlighting
-imageCanvas.addEventListener('mousemove', handleMouseMove);
-imageCanvas.addEventListener('mouseleave', () => {
-    appState.highlightedPoint = null;
-    if (appState.showVectorscope) {
-        drawVectorscope();
-    }
-});
+// Mouse tracking for vectorscope highlighting - DISABLED
+// imageCanvas.addEventListener('mousemove', handleMouseMove);
+// imageCanvas.addEventListener('mouseleave', () => {
+//     appState.highlightedPoint = null;
+//     if (appState.showVectorscope) {
+//         drawVectorscope();
+//     }
+// });
 thirdsSlider.addEventListener('input', (e) => {
     appState.thirdsLineWidth = parseInt(e.target.value);
     document.getElementById('sliderValue').textContent = e.target.value;
@@ -569,29 +569,29 @@ function drawVectorscope() {
         }
     });
 
-    // Draw highlighted point if exists
-    if (appState.highlightedPoint) {
-        const point = appState.highlightedPoint;
-        const mag = Math.hypot(point.u, point.v);
-        const theta = Math.atan2(point.v, point.u);
-        const px = cx + mag * 500 * Math.cos(theta);
-        const py = cy - mag * 500 * Math.sin(theta);
+    // Draw highlighted point if exists - DISABLED
+    // if (appState.highlightedPoint) {
+    //     const point = appState.highlightedPoint;
+    //     const mag = Math.hypot(point.u, point.v);
+    //     const theta = Math.atan2(point.v, point.u);
+    //     const px = cx + mag * 500 * Math.cos(theta);
+    //     const py = cy - mag * 500 * Math.sin(theta);
 
-        if (px >= 0 && px < width && py >= 0 && py < height) {
-            // Draw a larger, colored point
-            vectorscopeCtx.fillStyle = `rgb(${point.color.r}, ${point.color.g}, ${point.color.b})`;
-            vectorscopeCtx.beginPath();
-            vectorscopeCtx.arc(px, py, 4, 0, Math.PI * 2);
-            vectorscopeCtx.fill();
+    //     if (px >= 0 && px < width && py >= 0 && py < height) {
+    //         // Draw a larger, colored point
+    //         vectorscopeCtx.fillStyle = `rgb(${point.color.r}, ${point.color.g}, ${point.color.b})`;
+    //         vectorscopeCtx.beginPath();
+    //         vectorscopeCtx.arc(px, py, 4, 0, Math.PI * 2);
+    //         vectorscopeCtx.fill();
             
-            // Draw a white ring around it
-            vectorscopeCtx.strokeStyle = 'white';
-            vectorscopeCtx.lineWidth = 1;
-            vectorscopeCtx.beginPath();
-            vectorscopeCtx.arc(px, py, 5, 0, Math.PI * 2);
-            vectorscopeCtx.stroke();
-        }
-    }
+    //         // Draw a white ring around it
+    //         vectorscopeCtx.strokeStyle = 'white';
+    //         vectorscopeCtx.lineWidth = 1;
+    //         vectorscopeCtx.beginPath();
+    //         vectorscopeCtx.arc(px, py, 5, 0, Math.PI * 2);
+    //         vectorscopeCtx.stroke();
+    //     }
+    // }
 }
 
 // Initial draw
