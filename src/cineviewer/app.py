@@ -11,9 +11,14 @@ import os
 import time
 import logging
 import threading
+import warnings
 from datetime import datetime
 from collections import defaultdict
 from sklearn.cluster import KMeans
+
+# Suppress NumPy runtime warnings (divide by zero, invalid values are handled)
+warnings.filterwarnings('ignore', category=RuntimeWarning, module='numpy')
+np.seterr(divide='ignore', invalid='ignore')
 
 # Read version from VERSION file
 with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as f:
@@ -46,6 +51,19 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp', 'tiff'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_client_ip():
+    """Get the real client IP address, accounting for proxies and Docker networks."""
+    # Check X-Forwarded-For header (set by reverse proxies)
+    if request.headers.get('X-Forwarded-For'):
+        # X-Forwarded-For can contain multiple IPs, get the first (original client)
+        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    # Check X-Real-IP header (alternative header used by some proxies)
+    elif request.headers.get('X-Real-IP'):
+        return request.headers.get('X-Real-IP')
+    # Fall back to remote_addr
+    else:
+        return request.remote_addr
 
 def compute_histogram(image_array):
     """Compute RGB histograms from image array."""
@@ -374,10 +392,24 @@ def cleanup_clients():
             
         logger.info(f"Active clients: {active_count}, Cleaned sessions: {cleaned_count}")
 
+def log_memory_usage():
+    """Log memory usage every 1 second (debug mode)"""
+    while True:
+        time.sleep(1)  # Log every 1 second for debugging
+        try:
+            process = psutil.Process()
+            memory_info = process.memory_info()
+            memory_mb = memory_info.rss / 1024 / 1024  # Convert bytes to MB
+            memory_percent = process.memory_percent()
+            
+            logger.info(f"Memory Usage: {memory_mb:.1f}MB ({memory_percent:.1f}%)")
+        except Exception as e:
+            logger.error(f"Error logging memory usage: {str(e)}")
+
 @app.before_request
 def track_client():
     """Track client connection and initialize client data structure"""
-    client_ip = request.remote_addr
+    client_ip = get_client_ip()
     with client_lock:
         if client_ip not in clients:
             clients[client_ip] = {
@@ -441,7 +473,7 @@ def upload_image():
         image_data = image_to_base64(img_array)
 
         # Store data for this client
-        client_ip = request.remote_addr
+        client_ip = get_client_ip()
         with client_lock:
             clients[client_ip]["image_data"] = image_data
             clients[client_ip]["vectorscope_points"] = vectorscope_points
@@ -554,6 +586,10 @@ if __name__ == '__main__':
     # Start the cleanup thread
     cleanup_thread = threading.Thread(target=cleanup_clients, daemon=True)
     cleanup_thread.start()
+    
+    # Start the memory monitoring thread
+    memory_thread = threading.Thread(target=log_memory_usage, daemon=True)
+    memory_thread.start()
     
     from waitress import serve
     serve(app, 

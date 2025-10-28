@@ -5,6 +5,31 @@ All notable changes to Cine Viewer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2025-10-28
+
+### Added
+- **Enhanced Logging System**: Comprehensive admin logging improvements
+  - Periodic memory usage logging (every 30 seconds by default)
+  - Memory usage displayed in MB and percentage of system memory
+  - Configurable logging interval for debugging purposes
+- **Real Client IP Detection**: Fixed client IP logging for Docker/proxy environments
+  - Added `get_client_ip()` function to detect real client IP addresses
+  - Checks X-Forwarded-For and X-Real-IP headers
+  - Properly logs actual host IP instead of Docker bridge IP (172.x.x.x)
+  - Works correctly behind reverse proxies (Nginx, Apache, etc.)
+
+### Fixed
+- Suppressed NumPy runtime warnings (divide by zero, invalid values)
+  - Added warning filters for RuntimeWarning
+  - Configured NumPy error handling to ignore divide/invalid operations
+  - Cleaner logs without harmless mathematical warnings
+
+### Technical
+- Added `warnings` module import for filtering specific warning types
+- Implemented `log_memory_usage()` daemon thread for continuous monitoring
+- Enhanced `track_client()` to use real IP detection
+- Updated all client IP references to use `get_client_ip()` helper function
+
 ## [1.1.4] - 2025-10-27
 
 ### Added
