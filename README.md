@@ -251,7 +251,7 @@ Contributions welcome! Please open issues or pull requests on GitHub.
 
 ## License
 
-© Reid Petro - [reidpetro.com](https://www.reidpetro.com)
+Reid Petro
 
 ## Author
 
