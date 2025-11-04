@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   cv-web-app:
-    image: ghcr.io/RetroVisuals/cine-viewer:latest
+    image: ghcr.io/retrovisuals/cine-viewer:latest
     container_name: cine-viewer-webapp
     ports:
       - "8080:8080"
