@@ -147,6 +147,34 @@ def apply_false_color(image_array, fc_type="ARRI"):
         gray_vals = (brightness / 100 * 255).astype(np.uint8)
         out[mask_gray] = np.stack([gray_vals[mask_gray]]*3, axis=-1)
     
+    elif fc_type == "Sony":
+        mask_red = (brightness >= 93) & (brightness <= 96)
+        mask_yellow = (brightness >= 91) & (brightness < 93)
+        mask_orange = (brightness >= 87) & (brightness < 91)
+        mask_pink = (brightness >= 54) & (brightness < 58)
+        mask_light_pink = (brightness >= 47) & (brightness < 54)
+        mask_cyan = (brightness >= 43) & (brightness < 47)
+        mask_green = (brightness >= 38) & (brightness < 43)
+        mask_light_blue = (brightness >= 24) & (brightness < 38)
+        mask_blue = (brightness >= 3) & (brightness < 24)
+        mask_purple = (brightness >= 0) & (brightness < 3)
+        mask_gray = ~(mask_red | mask_yellow | mask_orange | mask_pink | mask_light_pink | 
+                      mask_cyan | mask_green | mask_light_blue | mask_blue | mask_purple)
+        
+        out[mask_red] = [255, 0, 0]           # Red
+        out[mask_yellow] = [255, 255, 0]      # Yellow
+        out[mask_orange] = [255, 165, 0]      # Orange
+        out[mask_pink] = [255, 0, 255]        # Pink (Magenta)
+        out[mask_light_pink] = [255, 182, 193] # Light Pink
+        out[mask_cyan] = [0, 255, 255]        # Cyan
+        out[mask_green] = [0, 255, 0]         # Green
+        out[mask_light_blue] = [173, 216, 230] # Light Blue
+        out[mask_blue] = [0, 0, 255]          # Blue
+        out[mask_purple] = [128, 0, 128]      # Purple
+        
+        gray_vals = (brightness / 100 * 255).astype(np.uint8)
+        out[mask_gray] = np.stack([gray_vals[mask_gray]]*3, axis=-1)
+    
     elif fc_type == "Blackmagic":
         mask_red = brightness >= 91
         mask_yellow = (brightness >= 88) & (brightness < 91)
@@ -590,6 +618,8 @@ if __name__ == '__main__':
     # Start the memory monitoring thread
     memory_thread = threading.Thread(target=log_memory_usage, daemon=True)
     memory_thread.start()
+    
+    logger.info("Serving on http://localhost:8080")
     
     from waitress import serve
     serve(app, 

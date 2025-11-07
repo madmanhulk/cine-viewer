@@ -431,9 +431,21 @@ function drawLegend() {
             { color: [128, 0, 128], range: '0-2.5%', desc: 'black clipping' },
             { color: [0, 0, 255], range: '2.5-4%', desc: 'just above black' },
             { color: [0, 255, 0], range: '38-42%', desc: '18% gray' },
-            { color: [255, 0, 255], range: '52-56%', desc: 'one stop over' },
+            { color: [255, 0, 255], range: '52-56%', desc: 'one stop over gray' },
             { color: [255, 255, 0], range: '97-99%', desc: 'just below white' },
             { color: [255, 0, 0], range: '99%+', desc: 'white clipping' }
+        ],
+        'Sony': [
+            { color: [128, 0, 128], range: '0-3%', desc: 'black clipping' },
+            { color: [0, 0, 255], range: '3-24%', desc: 'just above black' },
+            { color: [173, 216, 230], range: '24-38%', desc: '' },
+            { color: [0, 255, 0], range: '38-43%', desc: '18% gray' },
+            { color: [0, 255, 255], range: '43-47%', desc: '' },
+            { color: [255, 182, 193], range: '47-54%', desc: 'one stop over gray' },
+            { color: [255, 0, 255], range: '54-58%', desc: '' },
+            { color: [255, 165, 0], range: '87-91%', desc: '' },
+            { color: [255, 255, 0], range: '91-93%', desc: 'just below white' },
+            { color: [255, 0, 0], range: '93-96%', desc: 'white clipping' }
         ],
         'Blackmagic': [
             { color: [128, 0, 128], range: '0-5%', desc: 'black clipping' }, // purple
@@ -442,7 +454,6 @@ function drawLegend() {
             { color: [255, 255, 0], range: '90-95%', desc: 'highlights' },
             { color: [255, 0, 0], range: '95%+', desc: 'white clipping' }
         ]
-        // Add more false color types here as needed
     };
 
     // Pick legend set based on current falseColorType, fallback to ARRI
