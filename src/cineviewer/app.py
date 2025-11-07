@@ -23,6 +23,9 @@ np.seterr(divide='ignore', invalid='ignore')
 # Read version from VERSION file
 with open(os.path.join(os.path.dirname(__file__), 'VERSION')) as f:
     __version__ = f.read().strip()
+    # Format version to show only major.minor (first two parts)
+    version_parts = __version__.split('.')
+    __version_display__ = '.'.join(version_parts[:2]) if len(version_parts) >= 2 else __version__
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app)  # Enable CORS for all routes
@@ -450,11 +453,11 @@ def track_client():
 
 @app.route('/')
 def index():
-    return render_template('index.html', version=__version__)
+    return render_template('index.html', version=__version_display__)
 
 @app.route('/api/version')
 def get_version():
-    return jsonify({'version': __version__})
+    return jsonify({'version': __version_display__})
 
 @app.route('/api/upload', methods=['POST'])
 def upload_image():
