@@ -344,50 +344,73 @@ function drawOverlays() {
     const width = imageCanvas.width;
     const height = imageCanvas.height;
 
-    // Draw thirds
+    // Calculate visible area dimensions if aspect ratio overlay is active
+    let visibleWidth = width;
+    let visibleHeight = height;
+    let visibleX = 0;
+    let visibleY = 0;
+
+    if (appState.showAspectRatio && appState.aspectRatioType !== 'original') {
+        const targetRatio = aspectRatios[appState.aspectRatioType];
+        const currentRatio = width / height;
+        
+        if (targetRatio > currentRatio) {
+            // Image is taller than target - bars on top and bottom
+            visibleHeight = width / targetRatio;
+            visibleY = (height - visibleHeight) / 2;
+        } else if (targetRatio < currentRatio) {
+            // Image is wider than target - bars on left and right
+            visibleWidth = height * targetRatio;
+            visibleX = (width - visibleWidth) / 2;
+        }
+    }
+
+    // Draw thirds based on visible area
     if (appState.showThirds) {
         imageCtx.strokeStyle = 'white';
         imageCtx.lineWidth = appState.thirdsLineWidth;
         
-        const thirdX = width / 3;
-        const thirdY = height / 3;
+        const thirdX = visibleWidth / 3;
+        const thirdY = visibleHeight / 3;
 
+        // Vertical lines
         imageCtx.beginPath();
-        imageCtx.moveTo(thirdX, 0);
-        imageCtx.lineTo(thirdX, height);
+        imageCtx.moveTo(visibleX + thirdX, visibleY);
+        imageCtx.lineTo(visibleX + thirdX, visibleY + visibleHeight);
         imageCtx.stroke();
 
         imageCtx.beginPath();
-        imageCtx.moveTo(thirdX * 2, 0);
-        imageCtx.lineTo(thirdX * 2, height);
+        imageCtx.moveTo(visibleX + thirdX * 2, visibleY);
+        imageCtx.lineTo(visibleX + thirdX * 2, visibleY + visibleHeight);
+        imageCtx.stroke();
+
+        // Horizontal lines
+        imageCtx.beginPath();
+        imageCtx.moveTo(visibleX, visibleY + thirdY);
+        imageCtx.lineTo(visibleX + visibleWidth, visibleY + thirdY);
         imageCtx.stroke();
 
         imageCtx.beginPath();
-        imageCtx.moveTo(0, thirdY);
-        imageCtx.lineTo(width, thirdY);
-        imageCtx.stroke();
-
-        imageCtx.beginPath();
-        imageCtx.moveTo(0, thirdY * 2);
-        imageCtx.lineTo(width, thirdY * 2);
+        imageCtx.moveTo(visibleX, visibleY + thirdY * 2);
+        imageCtx.lineTo(visibleX + visibleWidth, visibleY + thirdY * 2);
         imageCtx.stroke();
     }
 
-    // Draw center cross
+    // Draw center cross based on visible area
     if (appState.showCenter) {
-        const centerX = width / 2;
-        const centerY = height / 2;
+        const centerX = visibleX + visibleWidth / 2;
+        const centerY = visibleY + visibleHeight / 2;
         imageCtx.strokeStyle = 'white';
         imageCtx.lineWidth = 2;
 
         let lineLength;
         if (appState.centerType === 'standard') {
-            lineLength = height * 0.04;
+            lineLength = visibleHeight * 0.04;
         } else if (appState.centerType === 'small') {
-            lineLength = height * 0.02;
+            lineLength = visibleHeight * 0.02;
         } else {
             // square
-            const squareSize = height * 0.02;
+            const squareSize = visibleHeight * 0.02;
             imageCtx.strokeRect(centerX - squareSize / 2, centerY - squareSize / 2, squareSize, squareSize);
             return;
         }

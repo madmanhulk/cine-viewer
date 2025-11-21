@@ -5,7 +5,7 @@ All notable changes to Cine Viewer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.5] - 2025-11-21
+## [1.3.6] - 2025-11-21
 
 ### Added
 - **Aspect Ratio Overlay Feature**: New cinematic framing tool with 6 preset aspect ratios
@@ -16,8 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 2.35:1: Anamorphic/cinematic widescreen
   - 4:3: Classic TV/monitor format
   - Black letterbox/pillarbox bars overlay based on target aspect ratio
-  - Dynamic "Original" button text showing actual image aspect ratio
+  - Dynamic "Original" button text showing actual image aspect ratio in format "Original (X.XX:1)"
   - Active button highlighting with green accent color
+- **Adaptive Overlay System**: Thirds grid and center cross now adapt to selected aspect ratio
+  - Thirds grid lines calculate based on visible aspect ratio area (excluding black bars)
+  - Center cross positions at the center of the visible aspect ratio area
+  - Provides accurate framing guides for different cinematic formats
 
 ### Technical
 - Added `showAspectRatio` and `aspectRatioType` to application state
@@ -25,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced `updateSubButtonStates()` to support aspect ratio button highlighting
 - Solid black overlay bars (`rgba(0, 0, 0, 1)`) for accurate framing visualization
 - Automatic top/bottom or left/right bar placement based on aspect ratio comparison
+- Added `visibleWidth`, `visibleHeight`, `visibleX`, `visibleY` calculations for overlay positioning
+- Thirds grid and center cross now use visible area dimensions instead of full canvas
 
 ## [1.1.6] - 2025-10-28
 
