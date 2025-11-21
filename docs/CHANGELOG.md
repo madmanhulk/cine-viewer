@@ -5,14 +5,15 @@ All notable changes to Cine Viewer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.6] - 2025-11-21
+## [1.3.7] - 2025-11-21
 
 ### Added
-- **Aspect Ratio Overlay Feature**: New cinematic framing tool with 6 preset aspect ratios
+- **Aspect Ratio Overlay Feature**: New cinematic framing tool with 7 preset aspect ratios
   - Original: Displays native image aspect ratio (no overlay)
   - 16:9: Standard widescreen format (1.78:1)
   - 9:16: Vertical/portrait format
   - 1:1: Square format
+  - 2:1: Streaming format (Univisium)
   - 2.35:1: Anamorphic/cinematic widescreen
   - 4:3: Classic TV/monitor format
   - Black letterbox/pillarbox bars overlay based on target aspect ratio
