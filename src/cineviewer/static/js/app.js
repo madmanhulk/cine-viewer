@@ -7,6 +7,8 @@ const appState = {
     centerType: 'small',
     showThirds: false,
     thirdsLineWidth: 1,
+    showAspectRatio: false,
+    aspectRatioType: 'original',
     showFalseColor: false,
     falseColorType: 'ARRI',
     showVectorscope: false,
@@ -15,6 +17,16 @@ const appState = {
     highlightedPoint: null, // Store the currently highlighted vectorscope point
     showPalette: false,
     paletteColors: []
+};
+
+// Aspect Ratios (width:height)
+const aspectRatios = {
+    'original': null, // Will be calculated from image
+    '16:9': 16/9,
+    '9:16': 9/16,
+    '1:1': 1/1,
+    '2.35:1': 2.35/1,
+    '4:3': 4/3
 };
 
 // Canvas Elements
@@ -39,6 +51,8 @@ const centerControls = document.getElementById('centerControls');
 const thirdsBtn = document.getElementById('thirdsBtn');
 const thirdsControls = document.getElementById('thirdsControls');
 const thirdsSlider = document.getElementById('thirdsSlider');
+const aspectRatioBtn = document.getElementById('aspectRatioBtn');
+const aspectRatioControls = document.getElementById('aspectRatioControls');
 const falsecolorBtn = document.getElementById('falsecolorBtn');
 const falsecolorControls = document.getElementById('falsecolorControls');
 const vectorscopeBtn = document.getElementById('vectorscopeBtn');
@@ -51,6 +65,7 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 // Image Info Elements
 const resolutionInfo = document.getElementById('resolutionInfo');
 const aspectRatioInfo = document.getElementById('aspectRatioInfo');
+const aspectRatioButtonText = document.getElementById('aspectRatioButtonText');
 const contrastRatioInfo = document.getElementById('contrastRatioInfo');
 
 // Event Listeners
@@ -58,6 +73,7 @@ openImageBtn.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', handleFileSelect);
 centerBtn.addEventListener('click', toggleCenter);
 thirdsBtn.addEventListener('click', toggleThirds);
+aspectRatioBtn.addEventListener('click', toggleAspectRatio);
 falsecolorBtn.addEventListener('click', toggleFalseColor);
 vectorscopeBtn.addEventListener('click', toggleVectorscope);
 paletteBtn.addEventListener('click', togglePalette);
@@ -81,6 +97,15 @@ document.querySelectorAll('[data-center-type]').forEach(btn => {
     btn.addEventListener('click', (e) => {
         appState.centerType = e.target.dataset.centerType;
         updateSubButtonStates('[data-center-type]', 'center-type');
+        drawImage();
+    });
+});
+
+// Aspect Ratio Type Buttons
+document.querySelectorAll('[data-aspect-type]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        appState.aspectRatioType = e.target.dataset.aspectType;
+        updateSubButtonStates('[data-aspect-type]', 'aspect-type');
         drawImage();
     });
 });
@@ -121,6 +146,7 @@ function enableControlButtons() {
     // Enable all control buttons when an image is loaded
     centerBtn.disabled = false;
     thirdsBtn.disabled = false;
+    aspectRatioBtn.disabled = false;
     falsecolorBtn.disabled = false;
     vectorscopeBtn.disabled = false;
     paletteBtn.disabled = false;
@@ -133,8 +159,17 @@ function updateSubButtonStates(selector, attrType) {
         btn.style.borderColor = '';
     });
     
-    const activeAttr = attrType === 'center-type' ? 'data-center-type' : 'data-fc-type';
-    const activeValue = attrType === 'center-type' ? appState.centerType : appState.falseColorType;
+    let activeAttr, activeValue;
+    if (attrType === 'center-type') {
+        activeAttr = 'data-center-type';
+        activeValue = appState.centerType;
+    } else if (attrType === 'aspect-type') {
+        activeAttr = 'data-aspect-type';
+        activeValue = appState.aspectRatioType;
+    } else {
+        activeAttr = 'data-fc-type';
+        activeValue = appState.falseColorType;
+    }
     
     document.querySelector(`[${activeAttr}="${activeValue}"]`).style.backgroundColor = '#4CAF50';
     document.querySelector(`[${activeAttr}="${activeValue}"]`).style.color = 'white';
@@ -151,6 +186,13 @@ function toggleThirds() {
     appState.showThirds = !appState.showThirds;
     thirdsBtn.classList.toggle('active', appState.showThirds);
     thirdsControls.style.display = appState.showThirds ? 'block' : 'none';
+    drawImage();
+}
+
+function toggleAspectRatio() {
+    appState.showAspectRatio = !appState.showAspectRatio;
+    aspectRatioBtn.classList.toggle('active', appState.showAspectRatio);
+    aspectRatioControls.style.display = appState.showAspectRatio ? 'flex' : 'none';
     drawImage();
 }
 
@@ -225,6 +267,7 @@ function handleFileSelect(event) {
 
                     resolutionInfo.textContent = `${data.width}x${data.height}`;
                     aspectRatioInfo.textContent = `${data.aspect_ratio}:1`;
+                    aspectRatioButtonText.textContent = `${data.aspect_ratio}:1`;
                     contrastRatioInfo.textContent = data.contrast_ratio ? `${data.contrast_ratio}:1` : '-';
 
                     // Hide loading spinner
@@ -358,6 +401,34 @@ function drawOverlays() {
         imageCtx.moveTo(centerX, centerY - lineLength);
         imageCtx.lineTo(centerX, centerY + lineLength);
         imageCtx.stroke();
+    }
+
+    // Draw aspect ratio overlay
+    if (appState.showAspectRatio && appState.aspectRatioType !== 'original') {
+        const targetRatio = aspectRatios[appState.aspectRatioType];
+        const currentRatio = width / height;
+        
+        imageCtx.fillStyle = 'rgba(0, 0, 0, 1)'; // Solid black bars
+        
+        if (targetRatio > currentRatio) {
+            // Image is taller than target - add bars on top and bottom
+            const targetHeight = width / targetRatio;
+            const barHeight = (height - targetHeight) / 2;
+            
+            // Top bar
+            imageCtx.fillRect(0, 0, width, barHeight);
+            // Bottom bar
+            imageCtx.fillRect(0, height - barHeight, width, barHeight);
+        } else if (targetRatio < currentRatio) {
+            // Image is wider than target - add bars on left and right
+            const targetWidth = height * targetRatio;
+            const barWidth = (width - targetWidth) / 2;
+            
+            // Left bar
+            imageCtx.fillRect(0, 0, barWidth, height);
+            // Right bar
+            imageCtx.fillRect(width - barWidth, 0, barWidth, height);
+        }
     }
 }
 

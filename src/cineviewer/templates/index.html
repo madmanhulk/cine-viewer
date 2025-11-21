@@ -25,7 +25,7 @@
 
             <!-- Center Cross -->
             <div class="control-section">
-                <button id="centerBtn" class="btn" disabled>Center Cross</button>
+                <button id="centerBtn" class="btn" disabled>Center Markers</button>
                 <div class="sub-controls" id="centerControls" style="display: none;">
                     <button class="sub-btn" data-center-type="standard">Standard</button>
                     <button class="sub-btn" data-center-type="small" style="background-color: #4CAF50; color: white;">Small</button>
@@ -40,6 +40,19 @@
                     <label for="thirdsSlider">Line Thickness:</label>
                     <input type="range" id="thirdsSlider" min="1" max="5" value="1">
                     <span id="sliderValue">1</span>
+                </div>
+            </div>
+
+            <!-- Aspect Ratios -->
+            <div class="control-section">
+                <button id="aspectRatioBtn" class="btn" disabled>Aspect Ratios</button>
+                <div class="sub-controls" id="aspectRatioControls" style="display: none;">
+                    <button class="sub-btn active-sub-btn" data-aspect-type="original">Original (<span id="aspectRatioButtonText">-</span>)</button>
+                    <button class="sub-btn" data-aspect-type="16:9">16:9 - Widescreen</button>
+                    <button class="sub-btn" data-aspect-type="9:16">9:16 - Vertical</button>
+                    <button class="sub-btn" data-aspect-type="1:1">1:1 - Square</button>
+                    <button class="sub-btn" data-aspect-type="2.35:1">2.35:1 - Anamorphic widescreen</button>
+                    <button class="sub-btn" data-aspect-type="4:3">4:3 - Classic TV</button>
                 </div>
             </div>
 
