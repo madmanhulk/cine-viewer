@@ -19,6 +19,18 @@ const appState = {
     paletteColors: []
 };
 
+// Splash Screen
+window.addEventListener('DOMContentLoaded', () => {
+    const splashScreen = document.getElementById('splashScreen');
+    setTimeout(() => {
+        splashScreen.classList.add('fade-out');
+        // Remove from DOM after fade completes
+        setTimeout(() => {
+            splashScreen.remove();
+        }, 2500);
+    }, 1000);
+});
+
 // Aspect Ratios (width:height)
 const aspectRatios = {
     'original': null, // Will be calculated from image

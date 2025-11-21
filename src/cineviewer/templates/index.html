@@ -7,6 +7,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="splash-screen">
+        <div class="splash-content">
+            <h1 class="splash-title">Cine Viewer</h1>
+            <p class="splash-creator">Created by Reid Petro</p>
+            <p class="splash-version">Version {{ version }}</p>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Sidebar Controls -->
         <aside class="sidebar">
