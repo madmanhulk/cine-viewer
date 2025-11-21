@@ -117,6 +117,15 @@ imageCanvas.addEventListener('drop', (e) => {
 });
 
 // Helper Functions
+function enableControlButtons() {
+    // Enable all control buttons when an image is loaded
+    centerBtn.disabled = false;
+    thirdsBtn.disabled = false;
+    falsecolorBtn.disabled = false;
+    vectorscopeBtn.disabled = false;
+    paletteBtn.disabled = false;
+}
+
 function updateSubButtonStates(selector, attrType) {
     document.querySelectorAll(selector).forEach(btn => {
         btn.style.backgroundColor = '';
@@ -222,6 +231,9 @@ function handleFileSelect(event) {
                     loadingSpinner.style.display = 'none';
                     placeholder.style.display = 'none';
                     imageCanvas.classList.add('visible');
+                    
+                    // Enable control buttons
+                    enableControlButtons();
                     
                     drawImage();
                     drawHistogram();
