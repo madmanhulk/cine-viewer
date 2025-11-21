@@ -46,6 +46,7 @@ const vectorscopeContainer = document.getElementById('vectorscopeContainer');
 const legendContainer = document.getElementById('legendContainer');
 const paletteBtn = document.getElementById('paletteBtn');
 const paletteContainer = document.getElementById('paletteContainer');
+const loadingSpinner = document.getElementById('loadingSpinner');
 
 // Image Info Elements
 const resolutionInfo = document.getElementById('resolutionInfo');
@@ -191,6 +192,10 @@ function handleFileSelect(event) {
         img.onload = async () => {
             appState.originalImage = img;
             
+            // Show loading spinner
+            loadingSpinner.style.display = 'flex';
+            placeholder.style.display = 'none';
+            
             // Upload to server for processing
             const formData = new FormData();
             formData.append('file', file);
@@ -213,6 +218,8 @@ function handleFileSelect(event) {
                     aspectRatioInfo.textContent = `${data.aspect_ratio}:1`;
                     contrastRatioInfo.textContent = data.contrast_ratio ? `${data.contrast_ratio}:1` : '-';
 
+                    // Hide loading spinner
+                    loadingSpinner.style.display = 'none';
                     placeholder.style.display = 'none';
                     imageCanvas.classList.add('visible');
                     
@@ -228,10 +235,12 @@ function handleFileSelect(event) {
                         displayPalette();
                     }
                 } else {
+                    loadingSpinner.style.display = 'none';
                     alert('Error processing image: ' + data.error);
                 }
             } catch (error) {
                 console.error('Upload error:', error);
+                loadingSpinner.style.display = 'none';
                 alert('Error uploading image');
             }
         };
