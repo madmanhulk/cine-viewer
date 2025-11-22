@@ -1,6 +1,6 @@
 # Cine Viewer
 
-A professional web-based cinematography tool for image analysis, false color grading, and color palette extraction.
+A professional web-based cinematography tool for image analysis, false color, and color palette extraction.
 
 ## Features
 
