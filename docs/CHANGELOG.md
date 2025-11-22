@@ -5,6 +5,26 @@ All notable changes to Cine Viewer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2025-11-22
+
+### Added
+- **Loading Indicators for Processing Operations**: Enhanced user feedback during server processing
+  - Loading spinner now appears when toggling false color ON
+  - Loading spinner displays when switching between false color types (ARRI/Canon, Sony, Blackmagic)
+  - Prevents user confusion about whether the app is frozen during processing
+  - Particularly important for deployed environments with network latency
+  - Uses same spinner design as image import for visual consistency
+
+### Fixed
+- Users no longer experience uncertainty during false color processing
+- Clear visual feedback that system is working, not frozen
+
+### Technical
+- Modified `toggleFalseColor()` to display loading spinner when enabling false color
+- Modified `applyFalseColor()` to hide spinner in `finally` block after processing completes
+- Updated false color type button handlers to show spinner during type changes
+- Loading state management ensures spinner hides regardless of success or error
+
 ## [1.3.7] - 2025-11-21
 
 ### Added

@@ -129,6 +129,8 @@ document.querySelectorAll('[data-fc-type]').forEach(btn => {
         appState.falseColorType = e.target.dataset.fcType;
         updateSubButtonStates('[data-fc-type]', 'fc-type');
         if (appState.showFalseColor && appState.originalImage) {
+            // Show loading spinner when changing false color type
+            loadingSpinner.style.display = 'flex';
             applyFalseColor();
         }
     });
@@ -215,6 +217,8 @@ function toggleFalseColor() {
     falsecolorControls.style.display = appState.showFalseColor ? 'flex' : 'none';
     legendContainer.style.display = appState.showFalseColor ? 'block' : 'none';
     if (appState.showFalseColor && appState.originalImage) {
+        // Show loading spinner
+        loadingSpinner.style.display = 'flex';
         applyFalseColor();
     } else {
         drawImage();
@@ -492,6 +496,9 @@ async function applyFalseColor() {
         }
     } catch (error) {
         console.error('False color error:', error);
+    } finally {
+        // Hide loading spinner when processing completes
+        loadingSpinner.style.display = 'none';
     }
 }
 
